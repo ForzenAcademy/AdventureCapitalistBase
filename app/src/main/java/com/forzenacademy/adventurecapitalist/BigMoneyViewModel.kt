@@ -76,13 +76,13 @@ class BigMoneyViewModel : ViewModel() {
     }
 
     fun onClickBuyAnother(type: VentureType) {
+        rasterizeState()
         val ventureMap = _state.value.ventureData.ventureMap
         val current = when (type) {
             VentureType.LEMON -> ventureMap[type] as Lemon
             VentureType.NEWSPAPER -> ventureMap[type] as Newspaper
         }
         val totalMoney = _state.value.totalMoney - current.upgradeCost
-        val progressValues = _state.value.progressValues
         _state.value = State(
             ventureData = VentureData(
                 ventureMap.toMutableMap().run {
@@ -91,6 +91,22 @@ class BigMoneyViewModel : ViewModel() {
                             quantity = this.quantity + 1,
                         )
                     }
+                    this
+                }
+            ),
+            currentTime = System.currentTimeMillis(),
+            lastKnownMoney = totalMoney,
+            lastStateChangeTimestamp = System.currentTimeMillis(),
+        )
+    }
+
+    private fun rasterizeState() {
+        val totalMoney = _state.value.totalMoney
+        val ventureMap = _state.value.ventureData.ventureMap
+        val progressValues = _state.value.progressValues
+        _state.value = State(
+            ventureData = VentureData(
+                ventureMap.toMutableMap().run {
                     keys.forEach { key ->
                         val v = this[key]!!
                         this[key] = v.copy(
