@@ -4,10 +4,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.forzenacademy.adventurecapitalist.game.Lemon
-import com.forzenacademy.adventurecapitalist.game.Newspaper
-import com.forzenacademy.adventurecapitalist.game.VentureData
-import com.forzenacademy.adventurecapitalist.game.VentureType
+import com.forzenacademy.adventurecapitalist.domain.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -15,7 +12,6 @@ import java.math.BigDecimal
 
 class BigMoneyViewModel : ViewModel() {
 
-    // TODO store last state of bar when timestamp updates
     data class State(
         val ventureData: VentureData,
         val currentTime: Long = System.currentTimeMillis(),
@@ -27,7 +23,7 @@ class BigMoneyViewModel : ViewModel() {
                 val deltaTime = currentTime - lastStateChangeTimestamp
                 val moneyValues = ventureData.ventureMap.keys.map {
                     ventureData.ventureMap[it]!!.run {
-                        ((deltaTime + this.lastTimeOffset) / (calculatedRateMs)) * calculatedMagnitude * quantity
+                        ((deltaTime + this.lastTimeOffset) / calculatedRateMs) * calculatedMagnitude
                     }
                 }
 
@@ -58,8 +54,10 @@ class BigMoneyViewModel : ViewModel() {
 
     private var _ventureData = VentureData(
         mapOf(
-            VentureType.LEMON to Lemon(1, 0),
-            VentureType.NEWSPAPER to Newspaper(1, 0)
+            VentureType.LEMON to Lemon(1),
+            VentureType.NEWSPAPER to Newspaper(0),
+            VentureType.CAR_WASH to CarWash(0),
+            VentureType.PIZZA to Pizza(0),
         )
     )
 
@@ -91,6 +89,8 @@ class BigMoneyViewModel : ViewModel() {
         val current = when (type) {
             VentureType.LEMON -> ventureMap[type] as Lemon
             VentureType.NEWSPAPER -> ventureMap[type] as Newspaper
+            VentureType.CAR_WASH -> ventureMap[type] as CarWash
+            VentureType.PIZZA -> ventureMap[type] as Pizza
         }
         val totalMoney = _state.value.totalMoney - current.upgradeCost
         _state.value = State(
@@ -98,7 +98,8 @@ class BigMoneyViewModel : ViewModel() {
                 ventureMap.toMutableMap().run {
                     this[type] = current.run {
                         this.copy(
-                            quantity = this.quantity + 1,
+                            quantity = quantity + 1,
+                            lastTimeOffset = if (quantity == 0) 0 else lastTimeOffset
                         )
                     }
                     this

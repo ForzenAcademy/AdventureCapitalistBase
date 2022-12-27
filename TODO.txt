@@ -1,0 +1,6 @@
+
+
+
+Unlink upgrade and unlock cost
+Remove quantity and make upgrade table system
+Wrap all math in big decimal
