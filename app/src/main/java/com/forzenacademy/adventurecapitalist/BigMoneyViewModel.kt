@@ -44,6 +44,16 @@ class BigMoneyViewModel : ViewModel() {
                     }
                 }
             }
+
+        val offsetValues: Map<VentureType, Long>
+            get() {
+                val deltaTime = currentTime - lastStateChangeTimestamp
+                return ventureData.ventureMap.keys.associateWith { key ->
+                    ventureData.ventureMap[key]!!.run {
+                        ((deltaTime + lastTimeOffset) % calculatedRateMs)
+                    }
+                }
+            }
     }
 
     private var _ventureData = VentureData(
@@ -103,14 +113,14 @@ class BigMoneyViewModel : ViewModel() {
     private fun rasterizeState() {
         val totalMoney = _state.value.totalMoney
         val ventureMap = _state.value.ventureData.ventureMap
-        val progressValues = _state.value.progressValues
+        val offsetValues = _state.value.offsetValues
         _state.value = State(
             ventureData = VentureData(
                 ventureMap.toMutableMap().run {
                     keys.forEach { key ->
                         val v = this[key]!!
                         this[key] = v.copy(
-                            lastTimeOffset = (progressValues[v.type]!! * v.calculatedRateMs).toLong()
+                            lastTimeOffset = offsetValues[v.type]!!
                         )
                     }
                     this
