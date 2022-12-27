@@ -89,7 +89,12 @@ class BigMoneyViewModel : ViewModel() {
                     this[type] = current.run {
                         this.copy(
                             quantity = this.quantity + 1,
-                            lastTimeOffset = (progressValues[this.type]!! * this.calculatedRateMs).toLong()
+                        )
+                    }
+                    keys.forEach { key ->
+                        val v = this[key]!!
+                        this[key] = v.copy(
+                            lastTimeOffset = (progressValues[v.type]!! * v.calculatedRateMs).toLong()
                         )
                     }
                     this
@@ -99,8 +104,6 @@ class BigMoneyViewModel : ViewModel() {
             lastKnownMoney = totalMoney,
             lastStateChangeTimestamp = System.currentTimeMillis(),
         )
-
-        // Need to make a different operation to update the offsets
     }
 
 }
