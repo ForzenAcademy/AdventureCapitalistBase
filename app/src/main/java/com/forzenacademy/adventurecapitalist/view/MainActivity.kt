@@ -1,9 +1,11 @@
-package com.forzenacademy.adventurecapitalist
+package com.forzenacademy.adventurecapitalist.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import com.forzenacademy.adventurecapitalist.Content
+import com.forzenacademy.adventurecapitalist.viewmodel.BigMoneyViewModel
 
 class MainActivity : ComponentActivity() {
 

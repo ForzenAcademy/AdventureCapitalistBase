@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.forzenacademy.adventurecapitalist.game.Venture
 import com.forzenacademy.adventurecapitalist.game.VentureType
+import com.forzenacademy.adventurecapitalist.viewmodel.BigMoneyViewModel
 import java.math.BigDecimal
 import java.text.NumberFormat
 
