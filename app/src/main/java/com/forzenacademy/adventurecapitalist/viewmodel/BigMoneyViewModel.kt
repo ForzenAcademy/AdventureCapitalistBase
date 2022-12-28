@@ -18,17 +18,18 @@ class BigMoneyViewModel : ViewModel() {
         val lastKnownMoney: BigDecimal = BigDecimal(0.0),
         val lastStateChangeTimestamp: Long = System.currentTimeMillis(),
     ) {
+        /**
+         * returns a bigdecimal sum of lastknown money and what the current calculated money should be
+         * calculates this by getting a list of venture types and then useing those venture types in the
+         * venture data's map to get the values of each venture, it then calculates the value by delta time and rate by magnitude
+         */
         val totalMoney: BigDecimal
             get() {
-                val deltaTime = currentTime - lastStateChangeTimestamp
-                val moneyValues = ventureData.ventureMap.keys.map {
+                return ventureData.ventureMap.keys.map {
                     ventureData.ventureMap[it]!!.run {
-                        ((deltaTime + this.lastTimeOffset) / calculatedRateMs) * calculatedMagnitude
+                        calculatedMagnitude.multiply(BigDecimal((currentTime - lastStateChangeTimestamp + this.lastTimeOffset) / calculatedRateMs))
                     }
-                }
-
-                val newMoney = moneyValues.sum()
-                return lastKnownMoney.add(BigDecimal(newMoney)) // TODO wrap all math
+                }.sum().add(lastKnownMoney)
             }
 
         val progressValues: Map<VentureType, Float>
@@ -133,4 +134,12 @@ class BigMoneyViewModel : ViewModel() {
         )
     }
 
+}
+
+private fun List<BigDecimal>.sum(): BigDecimal {
+    var sum: BigDecimal = BigDecimal.ZERO
+    for (element in this) {
+        sum += element
+    }
+    return sum
 }

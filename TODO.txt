@@ -1,8 +1,28 @@
 
-
+core
+Sticky Top Bar
+    contains money for now, and icon slot for profile
+    (can remove later or add to later if we want)
+icon structure
+8 items, scrolling screen
+multi buy (increment of 1, 5, 10, 25, max)
+Bottom nav with tabs (Bottom sheet that comes up)
+    (make these flexible allowing whatever to be in them)
 
 Unlink upgrade and unlock cost
 Remove quantity and make upgrade table system
-Wrap all math in big decimal
+//Wrap all math in big decimal Completed? double check with Nic when makeing PR
 Add categories for things with dropdowns
-Bottom nav with tabs
+
+a little Later
+Define tabs
+    (upgrades, settings tab(can move later if needed), managers)
+Expand on sticky top bar or leave as is
+Room object / data
+
+
+Later
+Ascension Math
+Math formulas for items / ascension
+More specified UI images / style through midjourney
+icons with images
