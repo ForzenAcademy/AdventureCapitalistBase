@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.forzenacademy.adventurecapitalist.domain.Venture
 import com.forzenacademy.adventurecapitalist.domain.VentureType
+import com.forzenacademy.adventurecapitalist.domain.size
 import com.forzenacademy.adventurecapitalist.viewmodel.BigMoneyViewModel
 import java.math.BigDecimal
 import java.text.NumberFormat
@@ -42,7 +43,7 @@ fun Content(state: BigMoneyViewModel.State, viewModel: BigMoneyViewModel) {
                 venture = venture,
                 progress = progressMap[it]!!,
                 canBuyAnother = venture.canPurchase(totalMoney),
-                timeLeftMs = ((1 - progressMap[it]!!) * venture.calculatedRateMs).toLong(),
+                timeLeftMs = ((1 - progressMap[it]!!) * venture.rateMs).toLong(),
                 onClickBuyAnother = { viewModel.onClickBuyAnother(it) }
             )
         }
@@ -82,7 +83,7 @@ fun VentureBar(
     timeLeftMs: Long,
     onClickBuyAnother: (VentureType) -> Unit
 ) {
-    if (venture.quantity == 0) {
+    if (!venture.unlocked) {
         LockedVentureBar(venture, canBuyAnother, onClickBuyAnother)
     } else {
         UnlockedVentureBar(venture, progress, canBuyAnother, timeLeftMs, onClickBuyAnother)
@@ -140,7 +141,7 @@ fun UnlockedVentureBar(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            Text(text = venture.type.name + " x" + venture.quantity)
+            Text(text = venture.type.name + " x" + venture.size())
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -155,7 +156,7 @@ fun UnlockedVentureBar(
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.Center),
-                    text = "${venture.calculatedMagnitude}",
+                    text = "${venture.magnitude}",
                 )
                 Text(
                     color = Color.Black,

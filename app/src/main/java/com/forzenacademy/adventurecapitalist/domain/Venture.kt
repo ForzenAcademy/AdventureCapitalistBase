@@ -3,64 +3,99 @@ package com.forzenacademy.adventurecapitalist.domain
 import java.math.BigDecimal
 
 abstract class Venture(
-    val quantity: Int,
-    private val baseMagnitude: Long,
-    private val baseRateMs: Long,
     val type: VentureType,
+    val upgrades: UpgradeRepository,
     val lastTimeOffset: Long,
 ) {
-    val calculatedRateMs: Long
-        get() = baseRateMs
 
-    val calculatedMagnitude: Long
-        get() = baseMagnitude * quantity
+    abstract val rateMs: Long
+
+    abstract val magnitude: BigDecimal
 
     abstract val upgradeCost: BigDecimal
+
+    abstract val unlocked: Boolean
 
     fun canPurchase(money: BigDecimal): Boolean {
         return money >= upgradeCost
     }
 
     abstract fun copy(
-        quantity: Int = this.quantity,
         lastTimeOffset: Long = this.lastTimeOffset
     ): Venture
 
 }
 
-class Lemon(quantity: Int, lastTimeOffset: Long = 0) :
-    Venture(quantity, 1, 2000, VentureType.LEMON, lastTimeOffset) {
-    override val upgradeCost: BigDecimal
-        get() = BigDecimal(3 * (quantity + 1))
+class Lemon(upgrades: UpgradeRepository, lastTimeOffset: Long = 0) :
+    Venture(VentureType.LEMON, upgrades, lastTimeOffset) {
 
-    override fun copy(quantity: Int, lastTimeOffset: Long): Lemon = Lemon(quantity, lastTimeOffset)
+    override val rateMs: Long
+        get() = 2000
+
+    override val magnitude: BigDecimal
+        get() = BigDecimal(1 * upgrades.quantity(type))
+
+    override val upgradeCost: BigDecimal
+        get() = BigDecimal(3 * (upgrades.quantity(type) + 1))
+
+    override val unlocked: Boolean
+        get() = upgrades.quantity(type) > 0
+
+    override fun copy(lastTimeOffset: Long): Lemon = Lemon(upgrades, lastTimeOffset)
 }
 
-class Newspaper(quantity: Int, lastTimeOffset: Long = 0) :
-    Venture(quantity, 5, 5000, VentureType.NEWSPAPER, lastTimeOffset) {
-    override val upgradeCost: BigDecimal
-        get() = BigDecimal(5 * (quantity + 1))
+class Newspaper(upgrades: UpgradeRepository, lastTimeOffset: Long = 0) :
+    Venture(VentureType.NEWSPAPER, upgrades, lastTimeOffset) {
 
-    override fun copy(quantity: Int, lastTimeOffset: Long): Newspaper =
-        Newspaper(quantity, lastTimeOffset)
+    override val rateMs: Long
+        get() = 5000
+
+    override val magnitude: BigDecimal
+        get() = BigDecimal(5 * upgrades.quantity(type))
+
+    override val upgradeCost: BigDecimal
+        get() = BigDecimal(5 * (upgrades.quantity(type) + 1))
+
+    override val unlocked: Boolean
+        get() = upgrades.quantity(type) > 0
+
+    override fun copy(lastTimeOffset: Long): Newspaper = Newspaper(upgrades, lastTimeOffset)
 }
 
-class CarWash(quantity: Int, lastTimeOffset: Long = 0) :
-    Venture(quantity, 16, 11000, VentureType.CAR_WASH, lastTimeOffset) {
-    override val upgradeCost: BigDecimal
-        get() = BigDecimal(10 * (quantity + 1))
+class CarWash(upgrades: UpgradeRepository, lastTimeOffset: Long = 0) :
+    Venture(VentureType.CAR_WASH, upgrades, lastTimeOffset) {
 
-    override fun copy(quantity: Int, lastTimeOffset: Long): CarWash =
-        CarWash(quantity, lastTimeOffset)
+    override val rateMs: Long
+        get() = 11000
+
+    override val magnitude: BigDecimal
+        get() = BigDecimal(16 * upgrades.quantity(type))
+
+    override val upgradeCost: BigDecimal
+        get() = BigDecimal(10 * (upgrades.quantity(type) + 1))
+
+    override val unlocked: Boolean
+        get() = upgrades.quantity(type) > 0
+
+    override fun copy(lastTimeOffset: Long): CarWash = CarWash(upgrades, lastTimeOffset)
 }
 
-class Pizza(quantity: Int, lastTimeOffset: Long = 0) :
-    Venture(quantity, 40, 20000, VentureType.PIZZA, lastTimeOffset) {
-    override val upgradeCost: BigDecimal
-        get() = BigDecimal(50 * (quantity + 1))
+class Pizza(upgrades: UpgradeRepository, lastTimeOffset: Long = 0) :
+    Venture(VentureType.PIZZA, upgrades, lastTimeOffset) {
 
-    override fun copy(quantity: Int, lastTimeOffset: Long): Pizza =
-        Pizza(quantity, lastTimeOffset)
+    override val rateMs: Long
+        get() = 20000
+
+    override val magnitude: BigDecimal
+        get() = BigDecimal(40 * upgrades.quantity(type))
+
+    override val upgradeCost: BigDecimal
+        get() = BigDecimal(50 * (upgrades.quantity(type) + 1))
+
+    override val unlocked: Boolean
+        get() = upgrades.quantity(type) > 0
+
+    override fun copy(lastTimeOffset: Long): Pizza = Pizza(upgrades, lastTimeOffset)
 }
 
 enum class VentureType {
@@ -70,3 +105,12 @@ enum class VentureType {
 data class VentureData(
     val ventureMap: Map<VentureType, Venture>
 )
+
+private fun UpgradeRepository.quantity(type: VentureType): Int =
+    all().filter { it.startsWith(type.name + "_LEVEL_") }.size
+
+fun UpgradeRepository.addQty(type: VentureType) {
+    add(type.name + "_LEVEL_" + quantity(type))
+}
+
+fun Venture.size() = upgrades.quantity(type)

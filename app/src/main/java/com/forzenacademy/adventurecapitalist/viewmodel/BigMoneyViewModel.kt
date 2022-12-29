@@ -12,6 +12,8 @@ import java.math.BigDecimal
 
 class BigMoneyViewModel : ViewModel() {
 
+    private val upgradeRepository: UpgradeRepository = UpgradeRepositoryImpl()
+
     data class State(
         val ventureData: VentureData,
         val currentTime: Long = System.currentTimeMillis(),
@@ -23,12 +25,12 @@ class BigMoneyViewModel : ViewModel() {
                 val deltaTime = currentTime - lastStateChangeTimestamp
                 val moneyValues = ventureData.ventureMap.keys.map {
                     ventureData.ventureMap[it]!!.run {
-                        ((deltaTime + this.lastTimeOffset) / calculatedRateMs) * calculatedMagnitude
+                        ((deltaTime + this.lastTimeOffset) / rateMs).toBigDecimal() * magnitude
                     }
                 }
 
-                val newMoney = moneyValues.sum()
-                return lastKnownMoney.add(BigDecimal(newMoney)) // TODO wrap all math
+                val newMoney = moneyValues.fold(BigDecimal(0)) { acc, i -> acc + i }
+                return lastKnownMoney.add(newMoney)
             }
 
         val progressValues: Map<VentureType, Float>
@@ -36,7 +38,7 @@ class BigMoneyViewModel : ViewModel() {
                 val deltaTime = currentTime - lastStateChangeTimestamp
                 return ventureData.ventureMap.keys.associateWith { key ->
                     ventureData.ventureMap[key]!!.run {
-                        ((deltaTime + lastTimeOffset) % calculatedRateMs) / (calculatedRateMs).toFloat()
+                        ((deltaTime + lastTimeOffset) % rateMs) / (rateMs).toFloat()
                     }
                 }
             }
@@ -46,7 +48,7 @@ class BigMoneyViewModel : ViewModel() {
                 val deltaTime = currentTime - lastStateChangeTimestamp
                 return ventureData.ventureMap.keys.associateWith { key ->
                     ventureData.ventureMap[key]!!.run {
-                        ((deltaTime + lastTimeOffset) % calculatedRateMs)
+                        ((deltaTime + lastTimeOffset) % rateMs)
                     }
                 }
             }
@@ -54,10 +56,10 @@ class BigMoneyViewModel : ViewModel() {
 
     private var _ventureData = VentureData(
         mapOf(
-            VentureType.LEMON to Lemon(1),
-            VentureType.NEWSPAPER to Newspaper(0),
-            VentureType.CAR_WASH to CarWash(0),
-            VentureType.PIZZA to Pizza(0),
+            VentureType.LEMON to Lemon(upgradeRepository, 1),
+            VentureType.NEWSPAPER to Newspaper(upgradeRepository, 0),
+            VentureType.CAR_WASH to CarWash(upgradeRepository, 0),
+            VentureType.PIZZA to Pizza(upgradeRepository, 0),
         )
     )
 
@@ -76,6 +78,7 @@ class BigMoneyViewModel : ViewModel() {
     fun startGameLoop() {
         if (gameLoopJob != null) return
         gameLoopJob = viewModelScope.launch {
+            upgradeRepository.addQty(VentureType.LEMON)
             while (true) {
                 delay(33)
                 updateStateTime()
@@ -98,8 +101,7 @@ class BigMoneyViewModel : ViewModel() {
                 ventureMap.toMutableMap().run {
                     this[type] = current.run {
                         this.copy(
-                            quantity = quantity + 1,
-                            lastTimeOffset = if (quantity == 0) 0 else lastTimeOffset
+                            lastTimeOffset = if (size() == 0) 0 else lastTimeOffset
                         )
                     }
                     this
@@ -109,6 +111,7 @@ class BigMoneyViewModel : ViewModel() {
             lastKnownMoney = totalMoney,
             lastStateChangeTimestamp = System.currentTimeMillis(),
         )
+        upgradeRepository.addQty(type)
     }
 
     private fun rasterizeState() {
