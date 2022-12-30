@@ -1,5 +1,7 @@
 package com.forzenacademy.adventurecapitalist.domain
 
+import java.math.BigDecimal
+
 interface UpgradeRepository {
     fun add(key: String)
     fun remove(key: String)
@@ -7,7 +9,7 @@ interface UpgradeRepository {
     fun contains(key: String): Boolean
 }
 
-class UpgradeRepositoryImpl: UpgradeRepository {
+class UpgradeRepositoryImpl : UpgradeRepository {
 
     // Using a Set for no duplicates
     private val keys = mutableSetOf<String>()
@@ -23,5 +25,11 @@ class UpgradeRepositoryImpl: UpgradeRepository {
     override fun all(): List<String> = keys.toList()
 
     override fun contains(key: String) = keys.contains(key)
+
+}
+
+data class PurchasableUpgrade(val text: String, val key: String, val cost: BigDecimal) {
+
+    fun canBuy(totalMoney: BigDecimal) = cost <= totalMoney
 
 }

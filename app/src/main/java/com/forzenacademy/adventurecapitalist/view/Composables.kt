@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.forzenacademy.adventurecapitalist.domain.PurchasableUpgrade
 import com.forzenacademy.adventurecapitalist.domain.Venture
-import com.forzenacademy.adventurecapitalist.domain.VentureType
 import com.forzenacademy.adventurecapitalist.domain.size
 import com.forzenacademy.adventurecapitalist.viewmodel.BigMoneyViewModel
 import java.math.BigDecimal
@@ -42,9 +42,10 @@ fun Content(state: BigMoneyViewModel.State, viewModel: BigMoneyViewModel) {
             VentureBar(
                 venture = venture,
                 progress = progressMap[it]!!,
-                canBuyAnother = venture.canPurchase(totalMoney),
+                money = totalMoney,
                 timeLeftMs = ((1 - progressMap[it]!!) * venture.rateMs).toLong(),
-                onClickBuyAnother = { viewModel.onClickBuyAnother(it) }
+                onBuyUpgrade = { upgrade -> viewModel.onBuyUpgrade(upgrade) },
+                onUnlockUpgrade = { venture -> viewModel.onUnlock(venture) }
             )
         }
     }
@@ -79,22 +80,23 @@ fun MoneyText(money: BigDecimal) {
 fun VentureBar(
     venture: Venture,
     progress: Float,
-    canBuyAnother: Boolean,
     timeLeftMs: Long,
-    onClickBuyAnother: (VentureType) -> Unit
+    money: BigDecimal,
+    onBuyUpgrade: (PurchasableUpgrade) -> Unit,
+    onUnlockUpgrade: (Venture) -> Unit,
 ) {
     if (!venture.unlocked) {
-        LockedVentureBar(venture, canBuyAnother, onClickBuyAnother)
+        LockedVentureBar(venture, money >= venture.unlockCost, onUnlockUpgrade)
     } else {
-        UnlockedVentureBar(venture, progress, canBuyAnother, timeLeftMs, onClickBuyAnother)
+        UnlockedVentureBar(venture, progress, timeLeftMs, money, onBuyUpgrade)
     }
 }
 
 @Composable
 fun LockedVentureBar(
     venture: Venture,
-    canBuyAnother: Boolean,
-    onClickBuyAnother: (VentureType) -> Unit,
+    canUnlock: Boolean,
+    onUnlockUpgrade: (Venture) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -112,10 +114,10 @@ fun LockedVentureBar(
             Text(text = venture.type.name)
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { onClickBuyAnother(venture.type) },
-                enabled = canBuyAnother
+                onClick = { onUnlockUpgrade(venture) },
+                enabled = canUnlock
             ) {
-                Text("UNLOCK \$${venture.upgradeCost}")
+                Text("UNLOCK \$${venture.unlockCost}")
             }
         }
     }
@@ -125,9 +127,9 @@ fun LockedVentureBar(
 fun UnlockedVentureBar(
     venture: Venture,
     progress: Float,
-    canBuyAnother: Boolean,
     timeLeftMs: Long,
-    onClickBuyAnother: (VentureType) -> Unit
+    money: BigDecimal,
+    onBuyUpgrade: (PurchasableUpgrade) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -166,11 +168,13 @@ fun UnlockedVentureBar(
                     text = "${(timeLeftMs / 1000 % 60) + 1}s",
                 )
             }
-            Button(
-                onClick = { onClickBuyAnother(venture.type) },
-                enabled = canBuyAnother
-            ) {
-                Text("+QTY \$${venture.upgradeCost}")
+            venture.purchasableUpgrades.forEach {
+                Button(
+                    onClick = { onBuyUpgrade(it) },
+                    enabled = it.canBuy(money)
+                ) {
+                    Text(it.text + " - $" + it.cost)
+                }
             }
         }
     }

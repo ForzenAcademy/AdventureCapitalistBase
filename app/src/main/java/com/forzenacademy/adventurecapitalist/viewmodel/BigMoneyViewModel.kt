@@ -9,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
+import kotlin.system.measureTimeMillis
 
 class BigMoneyViewModel : ViewModel() {
 
@@ -80,38 +81,41 @@ class BigMoneyViewModel : ViewModel() {
         gameLoopJob = viewModelScope.launch {
             upgradeRepository.addQty(VentureType.LEMON)
             while (true) {
-                delay(33)
-                updateStateTime()
+                val timeMs = measureTimeMillis {
+                    updateStateTime()
+                }
+                delay(33 - timeMs)
             }
         }
     }
 
-    fun onClickBuyAnother(type: VentureType) {
+    fun onUnlock(venture: Venture) {
         rasterizeState()
+        val totalMoney = _state.value.totalMoney - venture.unlockCost
         val ventureMap = _state.value.ventureData.ventureMap
-        val current = when (type) {
-            VentureType.LEMON -> ventureMap[type] as Lemon
-            VentureType.NEWSPAPER -> ventureMap[type] as Newspaper
-            VentureType.CAR_WASH -> ventureMap[type] as CarWash
-            VentureType.PIZZA -> ventureMap[type] as Pizza
-        }
-        val totalMoney = _state.value.totalMoney - current.upgradeCost
         _state.value = State(
             ventureData = VentureData(
-                ventureMap.toMutableMap().run {
-                    this[type] = current.run {
-                        this.copy(
-                            lastTimeOffset = if (size() == 0) 0 else lastTimeOffset
-                        )
-                    }
-                    this
+                ventureMap.toMutableMap().also {
+                    it[venture.type] = venture.copy(lastTimeOffset = 0)
                 }
             ),
             currentTime = System.currentTimeMillis(),
             lastKnownMoney = totalMoney,
             lastStateChangeTimestamp = System.currentTimeMillis(),
         )
-        upgradeRepository.addQty(type)
+        upgradeRepository.addQty(venture.type)
+    }
+
+    fun onBuyUpgrade(upgrade: PurchasableUpgrade) {
+        rasterizeState()
+        val totalMoney = _state.value.totalMoney - upgrade.cost
+        _state.value = State(
+            ventureData = _state.value.ventureData,
+            currentTime = System.currentTimeMillis(),
+            lastKnownMoney = totalMoney,
+            lastStateChangeTimestamp = System.currentTimeMillis(),
+        )
+        upgradeRepository.add(upgrade.key)
     }
 
     private fun rasterizeState() {
