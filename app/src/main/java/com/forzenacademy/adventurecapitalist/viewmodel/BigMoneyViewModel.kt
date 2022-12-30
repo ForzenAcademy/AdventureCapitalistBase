@@ -84,7 +84,7 @@ class BigMoneyViewModel : ViewModel() {
                 val timeMs = measureTimeMillis {
                     updateStateTime()
                 }
-                delay(33 - timeMs)
+                delay((33 - timeMs).coerceAtLeast(0))
             }
         }
     }
